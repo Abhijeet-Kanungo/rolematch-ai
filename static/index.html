@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RoleMatch AI — Semantic Job Search & Career Agent</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
+
+  <!-- Top Navbar -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-20">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white shadow">RM</div>
+        <div>
+          <h1 class="text-lg font-bold tracking-tight text-white">RoleMatch AI</h1>
+          <p class="text-xs text-slate-400">Hybrid SQL + Vector Semantic Search &amp; LLM Career Agent</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 text-xs">
+        <span id="statsBadge" class="px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300">
+          Loading index...
+        </span>
+        <button onclick="openProfileModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 transition">
+          My Profile
+        </button>
+        <a href="/docs" target="_blank" class="px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/40 text-indigo-300 transition">
+          API Docs (/docs)
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="max-w-6xl w-full mx-auto px-4 py-6 flex-1 flex flex-col gap-5">
+
+    <!-- Mode Switch Tabs -->
+    <div class="flex gap-2 border-b border-slate-800 pb-3">
+      <button id="tabAgent" onclick="switchTab('agent')" class="px-4 py-2 rounded-lg text-sm font-semibold bg-indigo-600 text-white transition">
+        AI Career Agent (RAG + Tools)
+      </button>
+      <button id="tabSearch" onclick="switchTab('search')" class="px-4 py-2 rounded-lg text-sm font-semibold bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-800 transition">
+        Hybrid Semantic Search
+      </button>
+    </div>
+
+    <!-- PANEL 1: AI Career Agent Chat -->
+    <section id="panelAgent" class="flex-1 flex flex-col gap-4">
+      <div class="flex flex-wrap gap-2">
+        <button onclick="sendQuickPrompt('Check my profile and recommend the top 3 Remote AI or LLM jobs that fit my skills.')"
+          class="text-xs px-3 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 transition">
+          Match my profile to Remote AI roles
+        </button>
+        <button onclick="sendQuickPrompt('Find Entry-Level SAP ABAP Cloud or enterprise backend roles and explain my skill gaps.')"
+          class="text-xs px-3 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 transition">
+          Entry-level SAP &amp; Enterprise roles
+        </button>
+        <button onclick="sendQuickPrompt('Compare average market salary stats for AI vs Backend roles in the database.')"
+          class="text-xs px-3 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 transition">
+          Compare AI vs Backend salaries (SQL)
+        </button>
+      </div>
+
+      <div id="chatBox" class="flex-1 min-h-[420px] max-h-[580px] overflow-y-auto space-y-4 p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+        <div class="p-4 rounded-xl bg-slate-800/70 border border-slate-700/70 text-sm text-slate-200 max-w-3xl">
+          <p class="font-semibold text-indigo-400 mb-1">RoleMatch AI Agent</p>
+          <p>Ask me to match your saved profile against 520+ indexed jobs, filter by city/work mode/salary, or run SQL market salary benchmarks. I execute live tools and return structured, grounded recommendations.</p>
+        </div>
+      </div>
+
+      <form id="chatForm" onsubmit="handleChatSubmit(event)" class="flex gap-2">
+        <input id="chatInput" type="text" required placeholder="Ask e.g. 'Find remote Python backend jobs paying over 12 LPA...'"
+          class="flex-1 px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500" />
+        <button id="chatSendBtn" type="submit" class="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-sm font-semibold text-white transition disabled:opacity-50">
+          Send
+        </button>
+      </form>
+    </section>
+
+    <!-- PANEL 2: Hybrid Semantic Search -->
+    <section id="panelSearch" class="hidden flex-col gap-4">
+      <form onsubmit="handleSearchSubmit(event)" class="p-4 rounded-xl bg-slate-900 border border-slate-800 grid grid-cols-1 md:grid-cols-6 gap-3">
+        <input id="searchQuery" type="text" required placeholder="Describe ideal role, skills, or work (e.g., FastAPI RAG pipelines and SQL)"
+          class="md:col-span-6 px-4 py-2.5 rounded-lg bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:border-indigo-500" />
+
+        <select id="filterLocation" class="md:col-span-2 px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-sm text-slate-200">
+          <option value="">All Locations</option>
+          <option>Bengaluru</option><option>Hyderabad</option><option>Pune</option>
+          <option>Gurugram</option><option>Mumbai</option><option>Chennai</option>
+          <option>Noida</option><option>Bhubaneswar</option><option>Remote</option>
+        </select>
+
+        <select id="filterMode" class="px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-sm text-slate-200">
+          <option value="">All Modes</option>
+          <option>Remote</option><option>Hybrid</option><option>On-site</option>
+        </select>
+
+        <select id="filterLevel" class="px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-sm text-slate-200">
+          <option value="">All Levels</option>
+          <option>Intern</option><option>Entry-Level</option><option>Mid-Level</option>
+        </select>
+
+        <input id="filterSalary" type="number" step="0.5" min="0" placeholder="Min LPA"
+          class="px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-sm text-white" />
+
+        <button id="searchBtn" type="submit" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-sm font-semibold text-white transition">
+          Search
+        </button>
+      </form>
+
+      <div id="searchResults" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+    </section>
+  </main>
+
+  <!-- Candidate Profile Modal -->
+  <div id="profileModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-6 space-y-4">
+      <div class="flex justify-between items-center">
+        <h2 class="text-base font-bold text-white">Candidate Profile (SQL `users` Table)</h2>
+        <button onclick="closeProfileModal()" class="text-slate-400 hover:text-white text-lg">&times;</button>
+      </div>
+      <form onsubmit="saveProfile(event)" class="space-y-3 text-sm">
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Full Name</label>
+          <input id="profName" type="text" required class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white" />
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Target Role</label>
+          <input id="profRole" type="text" required class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white" />
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Preferred Location</label>
+          <input id="profLoc" type="text" required class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white" />
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Skills (comma-separated)</label>
+          <textarea id="profSkills" rows="3" required class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white"></textarea>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeProfileModal()" class="px-4 py-2 rounded-lg bg-slate-800 text-slate-300">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold">Save Profile</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const sessionId = "web_" + Math.random().toString(36).substring(2, 10);
+
+    function esc(str) {
+      return String(str ?? "").replace(/[&<>"']/g, s => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[s]));
+    }
+
+    async function loadStats() {
+      try {
+        const res = await fetch("/api/stats");
+        const data = await res.json();
+        document.getElementById("statsBadge").textContent =
+          `${data.total_jobs} Jobs · ${data.total_companies} Companies · ${data.total_searches} Searches Logged`;
+      } catch (e) {
+        document.getElementById("statsBadge").textContent = "Index Ready";
+      }
+    }
+
+    function switchTab(tab) {
+      const isAgent = tab === "agent";
+      document.getElementById("panelAgent").classList.toggle("hidden", !isAgent);
+      document.getElementById("panelSearch").classList.toggle("hidden", isAgent);
+      document.getElementById("panelSearch").classList.toggle("flex", !isAgent);
+
+      document.getElementById("tabAgent").className = isAgent
+        ? "px-4 py-2 rounded-lg text-sm font-semibold bg-indigo-600 text-white transition"
+        : "px-4 py-2 rounded-lg text-sm font-semibold bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-800 transition";
+      document.getElementById("tabSearch").className = !isAgent
+        ? "px-4 py-2 rounded-lg text-sm font-semibold bg-indigo-600 text-white transition"
+        : "px-4 py-2 rounded-lg text-sm font-semibold bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-800 transition";
+    }
+
+    function sendQuickPrompt(text) {
+      document.getElementById("chatInput").value = text;
+      document.getElementById("chatForm").requestSubmit();
+    }
+
+    async function handleChatSubmit(e) {
+      e.preventDefault();
+      const input = document.getElementById("chatInput");
+      const btn = document.getElementById("chatSendBtn");
+      const chatBox = document.getElementById("chatBox");
+      const msg = input.value.trim();
+      if (!msg) return;
+
+      chatBox.insertAdjacentHTML("beforeend", `
+        <div class="flex justify-end">
+          <div class="p-3.5 rounded-xl bg-indigo-600 text-white text-sm max-w-2xl">${esc(msg)}</div>
+        </div>
+      `);
+      input.value = "";
+      btn.disabled = true;
+
+      const loadingId = "load_" + Date.now();
+      chatBox.insertAdjacentHTML("beforeend", `
+        <div id="${loadingId}" class="p-4 rounded-xl bg-slate-800/60 border border-slate-700 text-sm text-slate-400 max-w-2xl animate-pulse">
+          Running SQL + semantic tools and synthesizing structured recommendations...
+        </div>
+      `);
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: msg, session_id: sessionId, user_id: 1 })
+        });
+        const data = await res.json();
+        document.getElementById(loadingId)?.remove();
+
+        if (!res.ok) throw new Error(data.detail || "Request failed");
+
+        const r = data.response;
+        const toolsHtml = (data.tools_used || []).map(t =>
+          `<span class="px-2 py-0.5 rounded bg-emerald-950 border border-emerald-700/60 text-emerald-300 text-[11px] font-mono">tool:${esc(t)}</span>`
+        ).join(" ");
+
+        const jobsHtml = (r.recommended_jobs || []).map(j => `
+          <div class="mt-3 p-3.5 rounded-lg bg-slate-900/90 border border-slate-700">
+            <div class="flex flex-wrap justify-between items-start gap-2">
+              <div>
+                <p class="font-semibold text-white text-sm">${esc(j.title)} <span class="text-slate-400 font-normal">@ ${esc(j.company)}</span></p>
+                <p class="text-xs text-slate-400 mt-0.5">ID #${esc(j.job_id)} · ${esc(j.location)} · ${esc(j.work_mode)} · <span class="text-emerald-400 font-medium">${esc(j.salary_lpa)}</span></p>
+              </div>
+              <span class="px-2.5 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/40 text-indigo-300 text-xs font-semibold">${esc(j.match_percent)}% match</span>
+            </div>
+            <p class="text-xs text-slate-300 mt-2"><strong class="text-slate-200">Fit:</strong> ${esc(j.why_it_fits)}</p>
+            ${j.skill_gaps?.length ? `<p class="text-xs text-amber-300/90 mt-1"><strong>Skill gaps to prep:</strong> ${j.skill_gaps.map(esc).join(", ")}</p>` : ""}
+          </div>
+        `).join("");
+
+        const followUpsHtml = (r.follow_up_questions || []).map(q => `
+          <button onclick="sendQuickPrompt('${esc(q).replace(/'/g, "\\'")}')"
+            class="text-xs px-2.5 py-1 rounded-full bg-slate-900 hover:bg-slate-700 border border-slate-700 text-indigo-300 transition">
+            ${esc(q)}
+          </button>
+        `).join(" ");
+
+        chatBox.insertAdjacentHTML("beforeend", `
+          <div class="p-4 rounded-xl bg-slate-800/80 border border-slate-700 text-sm text-slate-200 max-w-3xl space-y-2">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex flex-wrap items-center gap-1.5">
+                <span class="font-semibold text-indigo-400">RoleMatch AI</span>
+                ${toolsHtml}
+              </div>
+              <span class="text-[11px] text-slate-400">${esc(data.model_used)} · ${(data.latency_ms / 1000).toFixed(1)}s</span>
+            </div>
+            <p class="leading-relaxed">${esc(r.assistant_reply)}</p>
+            ${jobsHtml}
+            ${followUpsHtml ? `<div class="pt-2 flex flex-wrap gap-1.5">${followUpsHtml}</div>` : ""}
+          </div>
+        `);
+        loadStats();
+      } catch (err) {
+        document.getElementById(loadingId)?.remove();
+        chatBox.insertAdjacentHTML("beforeend", `
+          <div class="p-3 rounded-xl bg-red-950/70 border border-red-800 text-xs text-red-200 max-w-2xl">
+            Error: ${esc(err.message)}
+          </div>
+        `);
+      } finally {
+        btn.disabled = false;
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+    }
+
+    async function handleSearchSubmit(e) {
+      e.preventDefault();
+      const btn = document.getElementById("searchBtn");
+      const container = document.getElementById("searchResults");
+      btn.disabled = true;
+      container.innerHTML = `<p class="text-sm text-slate-400 col-span-2">Embedding query and ranking SQL candidates...</p>`;
+
+      const payload = {
+        query: document.getElementById("searchQuery").value.trim(),
+        location: document.getElementById("filterLocation").value || null,
+        work_mode: document.getElementById("filterMode").value || null,
+        experience_level: document.getElementById("filterLevel").value || null,
+        min_salary_lpa: document.getElementById("filterSalary").value ? parseFloat(document.getElementById("filterSalary").value) : null,
+        top_k: 8
+      };
+
+      try {
+        const res = await fetch("/api/search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!data.results?.length) {
+          container.innerHTML = `<p class="text-sm text-slate-400 col-span-2">No jobs matched those strict SQL filters. Try widening location or salary.</p>`;
+        } else {
+          container.innerHTML = data.results.map(j => `
+            <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 flex flex-col justify-between gap-2">
+              <div>
+                <div class="flex justify-between items-start gap-2">
+                  <h3 class="font-semibold text-white text-sm">${esc(j.title)}</h3>
+                  <span class="px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-400/40 text-indigo-300 text-xs font-semibold">${esc(j.match_percent)}%</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-0.5">${esc(j.company)} (${esc(j.industry)}) · ${esc(j.location)} · ${esc(j.work_mode)} · ${esc(j.experience_level)}</p>
+                <p class="text-xs text-emerald-400 font-medium mt-1">${esc(j.salary_lpa)}</p>
+                <p class="text-xs text-slate-300 mt-2 leading-relaxed">${esc(j.description)}</p>
+              </div>
+              <div class="flex flex-wrap gap-1 pt-2 border-t border-slate-800">
+                ${j.skills.split(",").map(s => `<span class="px-2 py-0.5 rounded bg-slate-800 text-[11px] text-slate-300">${esc(s.trim())}</span>`).join("")}
+              </div>
+            </div>
+          `).join("");
+        }
+        loadStats();
+      } catch (err) {
+        container.innerHTML = `<p class="text-sm text-red-400 col-span-2">Search error: ${esc(err.message)}</p>`;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function openProfileModal() {
+      const res = await fetch("/api/profile/1");
+      const p = await res.json();
+      document.getElementById("profName").value = p.name || "";
+      document.getElementById("profRole").value = p.target_role || "";
+      document.getElementById("profLoc").value = p.preferred_location || "";
+      document.getElementById("profSkills").value = p.skills || "";
+      document.getElementById("profileModal").classList.remove("hidden");
+    }
+
+    function closeProfileModal() {
+      document.getElementById("profileModal").classList.add("hidden");
+    }
+
+    async function saveProfile(e) {
+      e.preventDefault();
+      await fetch("/api/profile/1", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: document.getElementById("profName").value.trim(),
+          target_role: document.getElementById("profRole").value.trim(),
+          preferred_location: document.getElementById("profLoc").value.trim(),
+          skills: document.getElementById("profSkills").value.trim(),
+        })
+      });
+      closeProfileModal();
+      alert("Profile updated in SQL! Ask the agent to match your updated profile.");
+    }
+
+    loadStats();
+  </script>
+</body>
+</html>
