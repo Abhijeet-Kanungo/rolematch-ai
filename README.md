@@ -2,8 +2,8 @@
 
 An end-to-end **AI Career Agent & Hybrid Semantic Job Search Engine** built with **FastAPI, 3NF SQL (SQLite), Gemini Vector Embeddings, Tool-Calling Agents, Pydantic Structured Outputs, and Docker**.
 
-> **Live Demo:** `[PASTE_YOUR_RENDER_URL_HERE]`  
-> **Interactive API Docs (Swagger UI):** `[PASTE_YOUR_RENDER_URL_HERE]/docs`
+> **Live Demo:** https://rolematch-ai-abhijeet.onrender.com  
+> **Interactive API Docs (Swagger UI):** https://rolematch-ai-abhijeet.onrender.com/docs
 
 ---
 
